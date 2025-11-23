@@ -85,6 +85,40 @@ const requestHandler = (req, res) => {
             }
             break;
 
+        // Rota Raiz: Retorna a documentação em JSON
+        case '/':
+            resultado = {
+              "mensagem": "API de Cálculos Básicos",
+              "endpoints": [
+                {
+                  "rota": "/soma",
+                  "metodo": "GET",
+                  "parametros": "a (número), b (número)",
+                  "exemplo": "/soma?a=10&b=5"
+                },
+                {
+                  "rota": "/subtracao",
+                  "metodo": "GET",
+                  "parametros": "a (número), b (número)",
+                  "exemplo": "/subtracao?a=10&b=5"
+                },
+                {
+                  "rota": "/multiplicacao",
+                  "metodo": "GET",
+                  "parametros": "a (número), b (número)",
+                  "exemplo": "/multiplicacao?a=10&b=5"
+                },
+                {
+                  "rota": "/maior",
+                  "metodo": "GET",
+                  "parametros": "a (número), b (número)",
+                  "exemplo": "/maior?a=10&b=5"
+                }
+              ]
+            };
+            res.writeHead(200);
+            break;
+
         default:
             // Rota não encontrada
             resultado = {
@@ -102,7 +136,7 @@ const requestHandler = (req, res) => {
 const server = http.createServer(requestHandler);
 
 // Define a porta em que o servidor irá rodar
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Inicia o servidor
 server.listen(PORT, () => {

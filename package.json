@@ -1,0 +1,16 @@
+{
+  "name": "api-calculos-basicos",
+  "version": "1.0.0",
+  "description": "API simples para cálculos básicos em Node.js puro.",
+  "main": "api.js",
+  "scripts": {
+    "start": "node api_simples.js"
+  },
+  "keywords": [
+    "node",
+    "api",
+    "engenharia-de-software"
+  ],
+  "author": "",
+  "license": "ISC"
+}
