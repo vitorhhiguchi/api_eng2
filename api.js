@@ -1,145 +1,130 @@
 const http = require('http');
 const url = require('url');
 
-// Função para manipular as requisições
+const isNumeroValido = (valor) => {
+    if (!valor || (typeof valor === 'string' && valor.trim() === '')) return false;
+    const numero = Number(valor);
+    return !isNaN(numero);
+};
+
+const validarParametros = (query) => {
+    const chavesPermitidas = ['a', 'b'];
+    const chavesRecebidas = Object.keys(query);
+
+    const temChaveEstranha = chavesRecebidas.some(chave => !chavesPermitidas.includes(chave));
+    if (temChaveEstranha) {
+        return { valido: false, erro: 'Parâmetros desconhecidos detectados. Envie apenas "a" e "b".' };
+    }
+
+    if (Array.isArray(query.a) || Array.isArray(query.b)) {
+        return { valido: false, erro: 'Parâmetros duplicados não são permitidos.' };
+    }
+
+    return { valido: true };
+};
+
 const requestHandler = (req, res) => {
-    // Define o cabeçalho da resposta
     res.setHeader('Content-Type', 'application/json');
 
-    // Faz o parse da URL e extrai o caminho (pathname) e os parâmetros de consulta (query)
     const parsedUrl = url.parse(req.url, true);
     const path = parsedUrl.pathname;
     const query = parsedUrl.query;
 
-    // Garante que o método HTTP é GET (para simplicidade)
+    // Garante que o método é GET
     if (req.method !== 'GET') {
         res.writeHead(405);
-        res.end(JSON.stringify({
-            erro: 'Método não permitido. Use GET.'
-        }));
+        res.end(JSON.stringify({ erro: 'Método não permitido. Use GET.' }));
+        return;
+    }
+
+    if (path === '/') {
+        const documentacao = {
+          "mensagem": "API de Cálculos Básicos",
+          "endpoints": [
+            {
+              "rota": "/soma",
+              "metodo": "GET",
+              "parametros": "a (número), b (número)",
+              "exemplo": "/soma?a=10&b=5"
+            },
+            {
+              "rota": "/subtracao",
+              "metodo": "GET",
+              "parametros": "a (número), b (número)",
+              "exemplo": "/subtracao?a=10&b=5"
+            },
+            {
+              "rota": "/multiplicacao",
+              "metodo": "GET",
+              "parametros": "a (número), b (número)",
+              "exemplo": "/multiplicacao?a=10&b=5"
+            },
+            {
+              "rota": "/maior",
+              "metodo": "GET",
+              "parametros": "a (número), b (número)",
+              "exemplo": "/maior?a=10&b=5"
+            }
+          ]
+        };
+        
+        res.writeHead(200);
+        res.end(JSON.stringify(documentacao));
+        return; 
+    }
+
+    const validacao = validarParametros(query);
+    if (!validacao.valido) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ erro: validacao.erro }));
+        return;
+    }
+
+    const a = Number(query.a);
+    const b = Number(query.b);
+
+    if (!isNumeroValido(query.a) || !isNumeroValido(query.b)) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ erro: 'Parâmetros inválidos. Certifique-se de enviar apenas números.' }));
         return;
     }
 
     let resultado = {};
-    const a = parseFloat(query.a);
-    const b = parseFloat(query.b);
 
     switch (path) {
-        // Método 1: Soma (e.g., /soma?a=10&b=5)
         case '/soma':
-            if (!isNaN(a) && !isNaN(b)) {
-                resultado = {
-                    metodo: 'soma',
-                    parametros: { a: a, b: b },
-                    resultado: a + b
-                };
-                res.writeHead(200);
-            } else {
-                resultado = { erro: 'Parâmetros inválidos. Use /soma?a=numero1&b=numero2' };
-                res.writeHead(400);
-            }
+            resultado = { metodo: 'soma', parametros: { a, b }, resultado: a + b };
+            res.writeHead(200);
             break;
 
-        // Método 2: Subtração (e.g., /subtracao?a=10&b=5)
         case '/subtracao':
-            if (!isNaN(a) && !isNaN(b)) {
-                resultado = {
-                    metodo: 'subtracao',
-                    parametros: { a: a, b: b },
-                    resultado: a - b
-                };
-                res.writeHead(200);
-            } else {
-                resultado = { erro: 'Parâmetros inválidos. Use /subtracao?a=numero1&b=numero2' };
-                res.writeHead(400);
-            }
+            resultado = { metodo: 'subtracao', parametros: { a, b }, resultado: a - b };
+            res.writeHead(200);
             break;
 
-        // Método 3: Multiplicação (e.g., /multiplicacao?a=10&b=5)
         case '/multiplicacao':
-            if (!isNaN(a) && !isNaN(b)) {
-                resultado = {
-                    metodo: 'multiplicacao',
-                    parametros: { a: a, b: b },
-                    resultado: a * b
-                };
-                res.writeHead(200);
-            } else {
-                resultado = { erro: 'Parâmetros inválidos. Use /multiplicacao?a=numero1&b=numero2' };
-                res.writeHead(400);
-            }
+            resultado = { metodo: 'multiplicacao', parametros: { a, b }, resultado: a * b };
+            res.writeHead(200);
             break;
 
-        // Método 4: Comparação (Retorna o maior) (e.g., /maior?a=10&b=5)
         case '/maior':
-            if (!isNaN(a) && !isNaN(b)) {
-                resultado = {
-                    metodo: 'maior',
-                    parametros: { a: a, b: b },
-                    resultado: Math.max(a, b)
-                };
-                res.writeHead(200);
-            } else {
-                resultado = { erro: 'Parâmetros inválidos. Use /maior?a=numero1&b=numero2' };
-                res.writeHead(400);
-            }
-            break;
-
-        // Rota Raiz: Retorna a documentação em JSON
-        case '/':
-            resultado = {
-              "mensagem": "API de Cálculos Básicos",
-              "endpoints": [
-                {
-                  "rota": "/soma",
-                  "metodo": "GET",
-                  "parametros": "a (número), b (número)",
-                  "exemplo": "/soma?a=10&b=5"
-                },
-                {
-                  "rota": "/subtracao",
-                  "metodo": "GET",
-                  "parametros": "a (número), b (número)",
-                  "exemplo": "/subtracao?a=10&b=5"
-                },
-                {
-                  "rota": "/multiplicacao",
-                  "metodo": "GET",
-                  "parametros": "a (número), b (número)",
-                  "exemplo": "/multiplicacao?a=10&b=5"
-                },
-                {
-                  "rota": "/maior",
-                  "metodo": "GET",
-                  "parametros": "a (número), b (número)",
-                  "exemplo": "/maior?a=10&b=5"
-                }
-              ]
-            };
+            resultado = { metodo: 'maior', parametros: { a, b }, resultado: Math.max(a, b) };
             res.writeHead(200);
             break;
 
         default:
-            // Rota não encontrada
-            resultado = {
-                erro: 'Rota não encontrada. Métodos disponíveis: /soma, /subtracao, /multiplicacao, /maior'
-            };
+            resultado = { erro: 'Rota não encontrada. Acesse a raiz (/) para ver a documentação.' };
             res.writeHead(404);
             break;
     }
 
-    // Envia a resposta como JSON
     res.end(JSON.stringify(resultado));
 };
 
-// Cria o servidor
 const server = http.createServer(requestHandler);
-
-// Define a porta em que o servidor irá rodar
 const PORT = process.env.PORT || 3000;
 
-// Inicia o servidor
 server.listen(PORT, () => {
-    console.log(`Servidor rodando em http://localhost:${PORT}`);
-    console.log(`Para testar localmente: http://localhost:${PORT}/soma?a=5&b=3`);
+    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Teste a documentação em: http://localhost:${PORT}/`);
 });
